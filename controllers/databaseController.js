@@ -15,7 +15,7 @@ exports.getDatabases = catchAsync(async (req, res, next) => {
   const limit = parseInt(req.query.limit, 10) || 10;
   const offset = (page - 1) * limit;
 
-  const userId = parseInt(req.query.user_id, 10);
+  const userId = req.user.id;
 
   if (isNaN(userId)) {
     return res.status(400).json({
@@ -137,7 +137,7 @@ exports.updateDatabase = catchAsync(async (req, res, next) => {
 
   if (global.database) {
     res.status(200).json({
-      title: 'Database mode',
+      title: 'Demo mode',
       status: 'database',
     });
   } else {

@@ -108,20 +108,16 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
-// Funzione per gestire la richiesta di recupero della password
 exports.forgotPassword = catchAsync(async (req, res, next) => {
-  // Trova l'utente con l'email fornita
   const user = await User.findOne({ where: { email: req.body.email } });
 
   if (!user) {
     return next(new AppError('No user found with that email address.', 404));
   }
 
-  // Crea un token di reset e salva nel database
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  // Crea l'URL di reset e invia l'email
   const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}`;
   const message = `Forgot your password? Submit a PATCH request with your new password to: ${resetURL}. If you didn't forget your password, please ignore this email!`;
 
@@ -137,7 +133,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
       message: 'Token sent to email!',
     });
   } catch (err) {
-    // Se c'è un errore nell'invio dell'email, reimposta i token e invia un errore
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save({ validateBeforeSave: false });
@@ -147,35 +142,28 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
-  // Trova l'utente basato sull'ID del token (già impostato in `req.user` dal middleware `protect`)
   const user = await User.findByPk(req.user.id);
 
   if (!user) {
     return next(new AppError('User not found.', 404));
   }
 
-  // Verifica se la password attuale fornita è corretta
   const isPasswordCorrect = await user.correctPassword(req.body.passwordCurrent, user.password);
 
   if (!isPasswordCorrect) {
     return next(new AppError('Your current password is incorrect.', 401));
   }
 
-  // Imposta la nuova password
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
   await user.save();
 
-  // Invia il nuovo token JWT
   createSendToken(user, 200, req, res);
 });
 
-// Funzione per gestire il reset della password
 exports.resetPassword = catchAsync(async (req, res, next) => {
-  // Hash del token di reset
   const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
 
-  // Trova l'utente con il token di reset valido
   const user = await User.findOne({
     where: {
       passwordResetToken: hashedToken,
@@ -187,14 +175,12 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     return next(new AppError('Token is invalid or has expired.', 400));
   }
 
-  // Imposta la nuova password
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
 
-  // Invia il nuovo token JWT
   createSendToken(user, 200, req, res);
 });
 

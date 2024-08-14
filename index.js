@@ -35,8 +35,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-
-
 process.on('unchaughtException', (err) => {
   console.log(err.name, err.message);
   console.log('Unchaught Exception!');
@@ -79,11 +77,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 const authRouter = require('./routers/authRoutes');
 const dashboardRouter = require('./routers/dashboardRoutes');
 const databaseRouter = require('./routers/databaseRoutes');
+const tableRouter = require('./routers/tableRoutes');
+const designerRouter = require('./routers/designerRoutes');
 const userRouter = require('./routers/userRoutes');
 
 app.use('/api/', authRouter);
 app.use('/api/', dashboardRouter);
 app.use('/api/', databaseRouter);
+app.use('/api/', tableRouter);
+app.use('/api/', designerRouter);
 app.use('/api/', userRouter);
 
 http.listen(8000, function () {

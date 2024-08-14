@@ -1,9 +1,10 @@
 const { DataTypes } = require('sequelize');
 const { db } = require('../db');
 const DB_PREFIX = process.env.DB_PREFIX || '';
+const Field = require('../models/fieldModel');
 
-const Database = db.define(
-  'Database',
+const Table = db.define(
+  'Table',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -14,15 +15,20 @@ const Database = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    summary: {
-      type: DataTypes.STRING,
+    x: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
-    user_id: {
+    y: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
+    database_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'User',
+        model: 'Database',
         key: 'id',
       },
     },
@@ -31,8 +37,11 @@ const Database = db.define(
     timestamps: true,
     updatedAt: 'updatedAt',
     createdAt: 'createdAt',
-    tableName: DB_PREFIX + 'database',
+    tableName: DB_PREFIX + 'table',
   }
 );
 
-module.exports = Database;
+Table.hasMany(Field, { foreignKey: 'table_id', as: 'fields' });
+Field.belongsTo(Table, { foreignKey: 'table_id', as: 'table' });
+
+module.exports = Table;
