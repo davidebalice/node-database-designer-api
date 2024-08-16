@@ -23,7 +23,6 @@ const Table = db.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-
     database_id: {
       type: DataTypes.INTEGER,
       allowNull: false,

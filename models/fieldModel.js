@@ -16,39 +16,39 @@ const Field = db.define(
     },
     field_type: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     lenght: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     default_value: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     primary_field: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     ai: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     index_field: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     order: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     nullable: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     table_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Table',
         key: 'id',
@@ -62,10 +62,5 @@ const Field = db.define(
     tableName: DB_PREFIX + 'field',
   }
 );
-/*
-Field.belongsTo(Table, {
-  foreignKey: 'table_id',
-  as: 'table'
-});
-*/
+
 module.exports = Field;

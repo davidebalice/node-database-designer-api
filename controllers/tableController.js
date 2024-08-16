@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const mongoose = require('mongoose');
 const Table = require('../models/tableModel');
 const Field = require('../models/fieldModel');
+const Link = require('../models/linkModel');
 const User = require('../models/userModel');
 const AppError = require('../middlewares/error');
 const catchAsync = require('../middlewares/catchAsync');
@@ -28,10 +29,16 @@ exports.getTables = catchAsync(async (req, res, next) => {
       {
         model: Field,
         as: 'fields',
-        attributes: ['name'], 
+        attributes: ['name'],
       },
     ],
-    order: [[{ model: Field, as: 'fields' }, 'order', 'ASC']], 
+    order: [[{ model: Field, as: 'fields' }, 'order', 'ASC']],
+  });
+
+  const links = await Link.findAll({
+    where: {
+      database_id: database_id,
+    },
   });
 
   let message = '';
@@ -45,6 +52,7 @@ exports.getTables = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     tables,
+    links,
     message,
   });
 });
@@ -116,12 +124,12 @@ exports.editTable = catchAsync(async (req, res, next) => {
 });
 
 exports.updateTable = catchAsync(async (req, res, next) => {
-  //console.log(global.table);
+  //console.log(global.demo);
 
-  if (global.table) {
+  if (global.demo) {
     res.status(200).json({
       title: 'Demo mode',
-      status: 'table',
+      status: 'demo',
     });
   } else {
     const doc = await Table.findByIdAndUpdate(req.params.id, req.body, {
@@ -139,63 +147,97 @@ exports.updateTable = catchAsync(async (req, res, next) => {
 });
 
 exports.updateTables = catchAsync(async (req, res, next) => {
-  //console.log(global.table);
+  //console.log(global.demo);
 
-  if (global.table) {
+  if (global.demo) {
     res.status(200).json({
       title: 'Demo mode',
-      status: 'table',
+      status: 'demo',
     });
   } else {
-    const tables = req.body;
-
-    console.log(tables);
+    const tables = req.body.tables;
+    const links = req.body.links;
+    const id = req.body.id;
 
     try {
       for (const tableData of tables) {
         const { x, y } = tableData.position || {};
-  
+
         let table = await Table.findByPk(tableData.id);
         if (table) {
           await table.update({
             name: tableData.name,
             x: x,
-            y: y
+            y: y,
           });
         } else {
           table = await Table.create({
-            id: tableData.id,
+            //id: tableData.id,
             name: tableData.name,
             x: x,
             y: y,
-            database_id: yourDatabaseId
+            database_id: id,
           });
         }
-  
-  
-        for (const fieldData of tableData.fields) {
+
+        for (let index = 0; index < tableData.fields.length; index++) {
+          const fieldName = tableData.fields[index];
+          /*
           let field = await Field.findByPk(fieldData.id);
           if (field) {
-            await field.update({ name: fieldData.name, order: fieldData.order });
+            await field.update({ name: fieldName });
           } else {
             await Field.create({
-              id: fieldData.id,
-              name: fieldData.name,
-              order: fieldData.order,
-              table_id: table.id
+              name: fieldName,
+              order: 1,
+              table_id: table.id,
+            });
+          }*/
+
+          const existingField = await Field.findOne({
+            where: {
+              name: fieldName,
+              table_id: table.id,
+            },
+          });
+
+          if (!existingField) {
+            await Field.create({
+              name: fieldName,
+              order: 1,
+              table_id: table.id,
             });
           }
         }
       }
-  
-      res.status(200).json({ message: 'Tabelle e campi aggiornati con successo!' });
+
+      for (const linkData of links) {
+        let link = await Link.findByPk(linkData.id);
+        if (link) {
+          await link.update({
+            sourceTable: linkData.sourceTable,
+            sourceField: linkData.sourceField,
+            targetTable: linkData.targetTable,
+            targetField: linkData.targetField,
+          });
+        } else {
+          link = await Link.create({
+            database_id: id,
+            sourceTable: linkData.sourceTable,
+            sourceField: linkData.sourceField,
+            targetTable: linkData.targetTable,
+            targetField: linkData.targetField,
+          });
+        }
+      }
+
+      res.status(200).json({ message: 'Tables update successfully!' });
     } catch (error) {
-      console.error('Errore durante l\'aggiornamento:', error);
-      res.status(500).json({ message: 'Errore durante l\'aggiornamento delle tabelle e dei campi.' });
+      console.error('Update error:', error);
+      res.status(500).json({ message: 'Update error.' });
     }
   }
 });
-
 
 exports.activeTable = catchAsync(async (req, res, next) => {
   const doc = await Table.findByIdAndUpdate(req.params.id, req.body, {

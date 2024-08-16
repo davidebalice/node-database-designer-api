@@ -133,12 +133,12 @@ exports.editDatabase = catchAsync(async (req, res, next) => {
 });
 
 exports.updateDatabase = catchAsync(async (req, res, next) => {
-  //console.log(global.database);
+  //console.log(global.demo);
 
-  if (global.database) {
+  if (global.demo) {
     res.status(200).json({
       title: 'Demo mode',
-      status: 'database',
+      status: 'demo',
     });
   } else {
     const doc = await Database.findByIdAndUpdate(req.params.id, req.body, {
