@@ -7,15 +7,15 @@ const demoMode = require('../middlewares/demo_mode');
 router.route('/databases').get(databaseController.getDatabases);
 
 router
-  .route('/add/database')
+  .route('/database/add')
   .get(authController.protect, databaseController.addDatabase)
   .post(authController.protect, demoMode, databaseController.createDatabase);
 
-router.route('/database/:id').get(databaseController.getDatabase);
+router.route('/database/:id').get(authController.protect, databaseController.getDatabase);
 
 router
-  .route('/edit/database/:id')
-  .get(databaseController.editDatabase)
+  .route('/database/edit/:id')
+  .get(authController.protect, databaseController.editDatabase)
   .post(authController.protect, demoMode, databaseController.updateDatabase);
 
 router.route('/database/delete/:id').post(authController.protect, demoMode, databaseController.deleteDatabase);

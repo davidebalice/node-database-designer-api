@@ -12,11 +12,11 @@ router
   .get(authController.protect, tableController.addTable)
   .post(authController.protect, demoMode, tableController.createTable);
 
-router.route('/table/:id').get(tableController.getTable);
+router.route('/table/:id').get(authController.protect, tableController.getTable);
 
 router
   .route('/edit/table/:id')
-  .get(tableController.editTable)
+  .get(authController.protect, tableController.editTable)
   .post(authController.protect, demoMode, tableController.updateTable);
 
 router.route('/table/delete/:id').post(authController.protect, demoMode, tableController.deleteTable);

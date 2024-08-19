@@ -67,21 +67,19 @@ exports.getDatabases = catchAsync(async (req, res, next) => {
 });
 
 exports.addDatabase = catchAsync(async (req, res, next) => {
-  const clients = await Client.find({}).sort({ companyName: 1 });
   res.status(200).json({
     title: 'Add database',
-    owner: res.locals.user._id,
-    clients: clients.map((client) => ({
-      _id: client._id,
-      companyName: client.companyName,
-    })),
   });
 });
 
 exports.createDatabase = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+  console.log('userId');
+  console.log(userId);
+
   try {
-    req.body._id = new mongoose.Types.ObjectId();
-    req.body.owner = res.locals.user._id;
+    req.body.user_id = userId;
+
     await Database.create(req.body);
 
     res.status(200).json({
@@ -89,7 +87,7 @@ exports.createDatabase = catchAsync(async (req, res, next) => {
       create: 'success',
     });
   } catch (err) {
-    res.status(200).json({
+    res.status(500).json({
       title: 'Create database',
       formData: req.body,
       message: err.message,
@@ -121,9 +119,10 @@ exports.getDatabase = catchAsync(async (req, res, next) => {
 });
 
 exports.editDatabase = catchAsync(async (req, res, next) => {
-  const database = await Database.findById(req.params.id);
+  const database = await Database.findByPk(req.params.id);
+
   if (!database) {
-    return next(new AppError('No document found with that ID', 404));
+    return next(new AppError('No record found with that ID', 404));
   }
 
   res.status(200).json({
@@ -133,26 +132,29 @@ exports.editDatabase = catchAsync(async (req, res, next) => {
 });
 
 exports.updateDatabase = catchAsync(async (req, res, next) => {
-  //console.log(global.demo);
-
   if (global.demo) {
-    res.status(200).json({
+    return res.status(200).json({
       title: 'Demo mode',
       status: 'demo',
     });
-  } else {
-    const doc = await Database.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!doc) {
-      return next(new AppError('No document found with that ID', 404));
-    }
-    res.status(200).json({
-      title: 'Update database',
-      status: 'success',
-    });
   }
+
+  const [updatedRows] = await Database.update(req.body, {
+    where: { id: req.params.id },
+    returning: true
+  });
+
+  if (updatedRows === 0) {
+    return next(new AppError('No record found with that ID', 404));
+  }
+
+  const updatedRecord = await Database.findByPk(req.params.id);
+
+  res.status(200).json({
+    title: 'Update database',
+    status: 'success',
+    updatedRecord,
+  });
 });
 
 exports.membersDatabase = catchAsync(async (req, res, next) => {

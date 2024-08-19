@@ -100,13 +100,23 @@ exports.deleteTable = catchAsync(async (req, res, next) => {
 });
 
 exports.getTable = catchAsync(async (req, res, next) => {
-  const table = await Table.findOne({ slug: req.params.slug });
+  const table = await Table.findOne({
+    where: { id: req.params.id },
+    include: [
+      {
+        model: Field,
+        as: 'fields',
+      },
+    ],
+    order: [[{ model: Field, as: 'fields' }, 'order', 'ASC']],
+  });
 
   if (!table) {
     return next(new AppError('No document found with that ID', 404));
   }
 
   res.status(200).json({
+    status: 'success',
     table,
   });
 });
@@ -123,27 +133,51 @@ exports.editTable = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.updateTable = catchAsync(async (req, res, next) => {
-  //console.log(global.demo);
 
+exports.updateTable = catchAsync(async (req, res, next) => {
   if (global.demo) {
-    res.status(200).json({
+    return res.status(200).json({
       title: 'Demo mode',
       status: 'demo',
     });
-  } else {
-    const doc = await Table.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!doc) {
-      return next(new AppError('No document found with that ID', 404));
-    }
-    res.status(200).json({
-      title: 'Update table',
-      status: 'success',
-    });
   }
+
+  const tableId = req.params.id;
+  const { name, fields } = req.body;
+
+  const table = await Table.findByPk(tableId);
+
+  if (!table) {
+    return next(new AppError('No document found with that ID', 404));
+  }
+
+  if (name) {
+    table.name = name;
+    await table.save();
+  }
+
+  if (fields && Array.isArray(fields)) {
+    for (const fieldData of fields) {
+      const { id, name, field_type } = fieldData;
+
+      if (id) {
+        const field = await Field.findByPk(id);
+        if (field) {
+          field.name = name || field.name;
+          field.field_type = field_type || field.field_type;
+          await field.save();
+        }
+      } else {
+        await Field.create({ name, field_type, tableId: table.id });
+      }
+    }
+  }
+
+  res.status(200).json({
+    title: 'Update table',
+    status: 'success',
+    table,
+  });
 });
 
 exports.updateTables = catchAsync(async (req, res, next) => {
@@ -163,7 +197,11 @@ exports.updateTables = catchAsync(async (req, res, next) => {
       for (const tableData of tables) {
         const { x, y } = tableData.position || {};
 
+        console.log('asdfddf');
+        console.log(tableData.id);
+
         let table = await Table.findByPk(tableData.id);
+        console.log(table);
         if (table) {
           await table.update({
             name: tableData.name,
@@ -171,8 +209,8 @@ exports.updateTables = catchAsync(async (req, res, next) => {
             y: y,
           });
         } else {
+          console.log('pppooii');
           table = await Table.create({
-            //id: tableData.id,
             name: tableData.name,
             x: x,
             y: y,
