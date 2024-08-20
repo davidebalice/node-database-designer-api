@@ -133,7 +133,6 @@ exports.editTable = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.updateTable = catchAsync(async (req, res, next) => {
   if (global.demo) {
     return res.status(200).json({
@@ -168,7 +167,12 @@ exports.updateTable = catchAsync(async (req, res, next) => {
           await field.save();
         }
       } else {
-        await Field.create({ name, field_type, tableId: table.id });
+        const maxOrder = await Field.max('order', {
+          where: { table_id: table.id },
+        });
+
+        const newOrder = maxOrder !== null ? maxOrder + 1 : 1;
+        await Field.create({ name, field_type, table_id: table.id, order: newOrder });
       }
     }
   }
