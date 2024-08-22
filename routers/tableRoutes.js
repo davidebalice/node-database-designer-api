@@ -20,5 +20,6 @@ router
   .post(authController.protect, demoMode, tableController.updateTable);
 
 router.route('/table/delete/:id').post(authController.protect, demoMode, tableController.deleteTable);
+router.route('/field/delete/:id').post(authController.protect, demoMode, tableController.deleteField);
 
 module.exports = router;

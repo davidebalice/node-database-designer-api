@@ -7,9 +7,6 @@ const Link = require('../models/linkModel');
 const User = require('../models/userModel');
 const AppError = require('../middlewares/error');
 const catchAsync = require('../middlewares/catchAsync');
-const fs = require('fs');
-const path = require('path');
-const { format } = require('date-fns');
 
 exports.getTables = catchAsync(async (req, res, next) => {
   const database_id = req.query.database_id;
@@ -29,7 +26,7 @@ exports.getTables = catchAsync(async (req, res, next) => {
       {
         model: Field,
         as: 'fields',
-        attributes: ['name'],
+        attributes: ['name', 'field_type', 'lenght', 'primary_field', 'ai', 'index_field'],
       },
     ],
     order: [[{ model: Field, as: 'fields' }, 'order', 'ASC']],
@@ -89,10 +86,14 @@ exports.createTable = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteTable = catchAsync(async (req, res, next) => {
-  const doc = await Table.findByIdAndDelete(req.params.id);
-  if (!doc) {
+  const tableId = req.params.id;
+
+  const table = await Table.destroy({ where: { id: tableId } });
+
+  if (!table) {
     return next(new AppError('No document found with that ID', 404));
   }
+
   res.status(200).json({
     title: 'Delete table',
     create: 'success',
@@ -157,13 +158,19 @@ exports.updateTable = catchAsync(async (req, res, next) => {
 
   if (fields && Array.isArray(fields)) {
     for (const fieldData of fields) {
-      const { id, name, field_type } = fieldData;
+      const { id, name, field_type, lenght, default_value, primary_field, ai, nullable, index_field } = fieldData;
 
       if (id) {
         const field = await Field.findByPk(id);
         if (field) {
           field.name = name || field.name;
           field.field_type = field_type || field.field_type;
+          field.primary_field = primary_field || 0;
+          field.lenght = lenght || field.lenght;
+          field.default_value = default_value || field.default_value;
+          field.ai = ai || 0;
+          field.nullable = nullable || 0;
+          field.index_field = index_field || 0;
           await field.save();
         }
       } else {
@@ -172,7 +179,18 @@ exports.updateTable = catchAsync(async (req, res, next) => {
         });
 
         const newOrder = maxOrder !== null ? maxOrder + 1 : 1;
-        await Field.create({ name, field_type, table_id: table.id, order: newOrder });
+        await Field.create({
+          name,
+          field_type,
+          lenght,
+          default_value,
+          primary_field,
+          ai,
+          nullable,
+          index_field,
+          table_id: table.id,
+          order: newOrder,
+        });
       }
     }
   }
@@ -289,4 +307,19 @@ exports.activeTable = catchAsync(async (req, res, next) => {
   if (!doc) {
     return next(new AppError('No document found with that ID', 404));
   }
+});
+
+exports.deleteField = catchAsync(async (req, res, next) => {
+  const fieldId = req.params.id;
+
+  const field = await Field.destroy({ where: { id: fieldId } });
+
+  if (!field) {
+    return next(new AppError('No document found with that ID', 404));
+  }
+
+  res.status(200).json({
+    title: 'Delete field',
+    create: 'success',
+  });
 });
