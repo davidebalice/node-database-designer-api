@@ -6,8 +6,6 @@ const Database = require('../models/databaseModel');
 const User = require('../models/userModel');
 const AppError = require('../middlewares/error');
 const catchAsync = require('../middlewares/catchAsync');
-const fs = require('fs');
-const path = require('path');
 const { format } = require('date-fns');
 
 exports.getDatabases = catchAsync(async (req, res, next) => {

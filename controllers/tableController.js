@@ -203,7 +203,6 @@ exports.updateTable = catchAsync(async (req, res, next) => {
 });
 
 exports.updateTables = catchAsync(async (req, res, next) => {
-  //console.log(global.demo);
 
   if (global.demo) {
     res.status(200).json({
@@ -299,14 +298,49 @@ exports.updateTables = catchAsync(async (req, res, next) => {
   }
 });
 
-exports.activeTable = catchAsync(async (req, res, next) => {
-  const doc = await Table.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!doc) {
-    return next(new AppError('No document found with that ID', 404));
+exports.getSql = catchAsync(async (req, res, next) => {
+  const database_id = req.query.database_id;
+
+  if (isNaN(database_id)) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Invalid database_id parameter',
+    });
   }
+
+  const tables = await Table.findAll({
+    where: {
+      database_id: database_id,
+    },
+    include: [
+      {
+        model: Field,
+        as: 'fields',
+      },
+    ],
+    order: [[{ model: Field, as: 'fields' }, 'order', 'ASC']],
+  });
+
+  const links = await Link.findAll({
+    where: {
+      database_id: database_id,
+    },
+  });
+
+  let message = '';
+  if (req.query.m) {
+    if (req.query.m === '1') {
+      message = 'Table added';
+    } else if (req.query.m === '2') {
+      message = 'Table deleted';
+    }
+  }
+
+  res.status(200).json({
+    tables,
+    links,
+    message,
+  });
 });
 
 exports.deleteField = catchAsync(async (req, res, next) => {

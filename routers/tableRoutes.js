@@ -4,8 +4,9 @@ const tableController = require('../controllers/tableController');
 const authController = require('../controllers/authController');
 const demoMode = require('../middlewares/demo_mode');
 
-router.route('/tables').get(tableController.getTables);
+router.route('/tables').get(authController.protect, tableController.getTables);
 router.route('/update-tables').post(authController.protect, demoMode, tableController.updateTables);
+router.route('/sql').get(authController.protect, tableController.getSql);
 
 router
   .route('/add/table')
