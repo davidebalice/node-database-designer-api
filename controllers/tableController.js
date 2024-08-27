@@ -1,6 +1,7 @@
 const moment = require('moment');
 const { Op } = require('sequelize');
 const mongoose = require('mongoose');
+const Database = require('../models/databaseModel');
 const Table = require('../models/tableModel');
 const Field = require('../models/fieldModel');
 const Link = require('../models/linkModel');
@@ -9,13 +10,29 @@ const AppError = require('../middlewares/error');
 const catchAsync = require('../middlewares/catchAsync');
 
 exports.getTables = catchAsync(async (req, res, next) => {
-  const database_id = req.query.database_id;
+  let database_id = req.query.database_id;
 
   if (isNaN(database_id)) {
     return res.status(400).json({
       status: 'fail',
       message: 'Invalid database_id parameter',
     });
+  }
+
+  if (parseInt(database_id) === 0) {
+    const firstDatabase = await Database.findOne({
+      attributes: ['id'],
+      order: [['createdAt', 'ASC']],
+    });
+
+    if (!firstDatabase) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'No databases found',
+      });
+    }
+
+    database_id = firstDatabase.id;
   }
 
   const tables = await Table.findAll({
@@ -203,7 +220,6 @@ exports.updateTable = catchAsync(async (req, res, next) => {
 });
 
 exports.updateTables = catchAsync(async (req, res, next) => {
-
   if (global.demo) {
     res.status(200).json({
       title: 'Demo mode',
@@ -299,7 +315,23 @@ exports.updateTables = catchAsync(async (req, res, next) => {
 });
 
 exports.getSql = catchAsync(async (req, res, next) => {
-  const database_id = req.query.database_id;
+  let database_id = req.query.database_id;
+
+  if (parseInt(database_id) === 0) {
+    const firstDatabase = await Database.findOne({
+      attributes: ['id'],
+      order: [['createdAt', 'ASC']],
+    });
+
+    if (!firstDatabase) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'No databases found',
+      });
+    }
+
+    database_id = firstDatabase.id;
+  }
 
   if (isNaN(database_id)) {
     return res.status(400).json({
