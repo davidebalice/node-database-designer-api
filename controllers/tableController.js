@@ -105,11 +105,22 @@ exports.createTable = catchAsync(async (req, res, next) => {
 exports.deleteTable = catchAsync(async (req, res, next) => {
   const tableId = req.params.id;
 
-  const table = await Table.destroy({ where: { id: tableId } });
+  const tableDatabaseId = await Table.findByPk(tableId);
 
-  if (!table) {
+  if (!tableDatabaseId) {
     return next(new AppError('No document found with that ID', 404));
   }
+
+  const databaseId = tableDatabaseId.database_id;
+
+  const table = await Table.destroy({ where: { id: tableId } });
+  const fields = await Field.destroy({ where: { table_id: tableId } });
+  await Link.destroy({
+    where: {
+      database_id: databaseId,
+      [Op.or]: [{ sourceTable: tableDatabaseId.name }, { targetTable: tableDatabaseId.name }],
+    },
+  });
 
   res.status(200).json({
     title: 'Delete table',
@@ -234,11 +245,8 @@ exports.updateTables = catchAsync(async (req, res, next) => {
       for (const tableData of tables) {
         const { x, y } = tableData.position || {};
 
-        console.log('asdfddf');
-        console.log(tableData.id);
-
         let table = await Table.findByPk(tableData.id);
-        console.log(table);
+
         if (table) {
           await table.update({
             name: tableData.name,
@@ -246,7 +254,6 @@ exports.updateTables = catchAsync(async (req, res, next) => {
             y: y,
           });
         } else {
-          console.log('pppooii');
           table = await Table.create({
             name: tableData.name,
             x: x,
@@ -256,29 +263,25 @@ exports.updateTables = catchAsync(async (req, res, next) => {
         }
 
         for (let index = 0; index < tableData.fields.length; index++) {
-          const fieldName = tableData.fields[index];
-          /*
-          let field = await Field.findByPk(fieldData.id);
-          if (field) {
-            await field.update({ name: fieldName });
-          } else {
-            await Field.create({
-              name: fieldName,
-              order: 1,
-              table_id: table.id,
-            });
-          }*/
+          const field = tableData.fields[index];
 
           const existingField = await Field.findOne({
             where: {
-              name: fieldName,
+              name: field.name,
               table_id: table.id,
             },
           });
 
           if (!existingField) {
             await Field.create({
-              name: fieldName,
+              name: field.name,
+              ai: field.ai,
+              default_value: field.default_value,
+              field_type: field.field_type,
+              lenght: field.lenght,
+              primary_field: field.primary_field,
+              nullable: field.nullable,
+              index_field: field.index_field,
               order: 1,
               table_id: table.id,
             });
@@ -386,6 +389,21 @@ exports.deleteField = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     title: 'Delete field',
+    create: 'success',
+  });
+});
+
+exports.deleteLink = catchAsync(async (req, res, next) => {
+  const linkId = req.params.id;
+
+  const link = await Link.destroy({ where: { id: linkId } });
+
+  if (!link) {
+    return next(new AppError('No document found with that ID', 404));
+  }
+
+  res.status(200).json({
+    title: 'Delete link',
     create: 'success',
   });
 });

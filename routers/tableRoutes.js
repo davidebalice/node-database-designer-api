@@ -22,5 +22,6 @@ router
 
 router.route('/table/delete/:id').post(authController.protect, demoMode, tableController.deleteTable);
 router.route('/field/delete/:id').post(authController.protect, demoMode, tableController.deleteField);
+router.route('/link/delete/:id').post(authController.protect, demoMode, tableController.deleteLink);
 
 module.exports = router;
