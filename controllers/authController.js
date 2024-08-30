@@ -5,10 +5,23 @@ const User = require('../models/userModel');
 const catchAsync = require('../middlewares/catchAsync');
 const AppError = require('../middlewares/error');
 
-const signToken = (id) =>
+const fs = require('fs');
+const path = require('path');
+const logFile = path.join(__dirname, 'app.log');
+const logStream = fs.createWriteStream(logFile, { flags: 'a' });
+
+const log = (message) => {
+  const formattedMessage = `${new Date().toISOString()} - ${message}\n`;
+  logStream.write(formattedMessage);
+};
+
+//console.log = log;
+
+const signToken = (id) => {
   jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
+};
 
 const createSendToken = (user, statusCode, req, res) => {
   const token = signToken(user.id);
@@ -19,11 +32,14 @@ const createSendToken = (user, statusCode, req, res) => {
     httpOnly: true,
   };
 
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = false;
+  //if (process.env.NODE_ENV === 'production') cookieOptions.secure = false;
+  //if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
 
   res.cookie('jwt', token, cookieOptions);
 
   user.password = undefined;
+
+  req.user = user;
 
   res.status(statusCode).json({
     status: 'success',
@@ -52,16 +68,11 @@ exports.login = catchAsync(async (req, res, next) => {
   console.log(req.body);
   const { email, password } = req.body;
 
-  console.log(email);
-  console.log(password);
-
   if (!email || !password) {
     return errorLogin(res);
   }
 
   const user = await User.findOne({ where: { email } });
-
-  console.log(user);
 
   if (!user || !(await user.correctPassword(password, user.password))) {
     return errorLogin(res);
@@ -85,15 +96,25 @@ exports.protect = catchAsync(async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
+    console.log(token);
   } else if (req.cookies.jwt) {
     token = req.cookies.jwt;
   }
+
+  console.log('token');
+  console.log(token);
 
   if (!token) {
     return res.status(401).json({ status: 'fail', message: 'You are not logged in!' });
   }
 
+  console.log('prima di decoded.id');
+
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  console.log('decoded.id');
+  console.log(decoded.id);
+
   const currentUser = await User.findByPk(decoded.id);
 
   if (!currentUser) {

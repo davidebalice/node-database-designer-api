@@ -4,7 +4,7 @@ const databaseController = require('../controllers/databaseController');
 const authController = require('../controllers/authController');
 const demoMode = require('../middlewares/demo_mode');
 
-router.route('/databases').get(databaseController.getDatabases);
+router.route('/databases').get(authController.protect, databaseController.getDatabases);
 
 router
   .route('/database/add')

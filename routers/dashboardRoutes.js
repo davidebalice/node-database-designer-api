@@ -9,5 +9,6 @@ router.route('/').get(authController.protect, async function (req, res) {
 });
 
 router.get('/getdemomode', authController.protect, dashboardController.getDemoMode);
+router.get('/get-connection', dashboardController.getConnection);
 
 module.exports = router;

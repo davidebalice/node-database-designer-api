@@ -1,6 +1,5 @@
 const app = require('express')();
 const express = require('express');
-const { db, dbPrefix } = require('./db');
 const path = require('path');
 const http = require('http').Server(app);
 const validator = require('express-validator');
@@ -10,15 +9,6 @@ dotenv.config({ path: './config.env' });
 const cors = require('cors');
 
 global.token = '';
-
-/*
-app.use(
-  cors({
-    origin: 'http://localhost:3000',
-    optionsSuccessStatus: 200,
-  })
-);
-*/
 
 const allowedOrigins = [/^https?:\/\/(?:.*\.)?davidebalice\.dev$/, /^http:\/\/localhost(:\d+)?$/];
 
