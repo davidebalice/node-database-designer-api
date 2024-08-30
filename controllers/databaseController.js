@@ -94,6 +94,12 @@ exports.createDatabase = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteDatabase = catchAsync(async (req, res, next) => {
+  if (global.demo) {
+    return res.status(200).json({
+      title: 'Demo mode',
+      status: 'demo',
+    });
+  }
   const doc = await Database.findByIdAndDelete(req.params.id);
   if (!doc) {
     return next(new AppError('No document found with that ID', 404));

@@ -103,6 +103,12 @@ exports.createTable = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteTable = catchAsync(async (req, res, next) => {
+  if (global.demo) {
+    return res.status(200).json({
+      title: 'Demo mode',
+      status: 'demo',
+    });
+  }
   const tableId = req.params.id;
 
   const tableDatabaseId = await Table.findByPk(tableId);
@@ -379,6 +385,13 @@ exports.getSql = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteField = catchAsync(async (req, res, next) => {
+  if (global.demo) {
+    return res.status(200).json({
+      title: 'Demo mode',
+      status: 'demo',
+    });
+  }
+
   const fieldId = req.params.id;
 
   const field = await Field.destroy({ where: { id: fieldId } });
@@ -394,6 +407,13 @@ exports.deleteField = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteLink = catchAsync(async (req, res, next) => {
+  if (global.demo) {
+    return res.status(200).json({
+      title: 'Demo mode',
+      status: 'demo',
+    });
+  }
+
   const linkId = req.params.id;
 
   const link = await Link.destroy({ where: { id: linkId } });
